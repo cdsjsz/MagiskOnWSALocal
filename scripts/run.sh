@@ -110,7 +110,7 @@ if [ -n "${NEED_INSTALL[*]}" ]; then
                 NEED_INSTALL_FIX=${NEED_INSTALL_FIX//whiptail/dialog} 2>&1
                 NEED_INSTALL_FIX=${NEED_INSTALL_FIX//xz-utils/xz} 2>&1
             }  >> /dev/null
-
+            
             readarray -td ' ' NEED_INSTALL <<<"$NEED_INSTALL_FIX "; unset 'NEED_INSTALL[-1]';
         elif [ "$PM" = "apk" ]; then
             NEED_INSTALL_FIX=${NEED_INSTALL[*]}
@@ -143,110 +143,14 @@ function YesNoBox {
     $DIALOG --title "${o[title]}" --yesno "${o[text]}" 0 0
 }
 
-ARCH=$(
-    Radiolist '([title]="Build arch"
-                [default]="x64")' \
-        \
-        'x64' "X86_64" 'on' \
-        'arm64' "AArch64" 'off'
-)
-
-RELEASE_TYPE=$(
-    Radiolist '([title]="WSA release type"
-                [default]="retail")' \
-        \
-        'retail' "Stable Channel" 'on' \
-        'release preview' "Release Preview Channel" 'off' \
-        'insider slow' "Beta Channel" 'off' \
-        'insider fast' "Dev Channel" 'off'
-)
-
-if [ -z "${CUSTOM_MAGISK+x}" ]; then
-    MAGISK_VER=$(
-        Radiolist '([title]="Magisk version"
-                        [default]="stable")' \
-            \
-            'stable' "Stable Channel" 'on' \
-            'beta' "Beta Channel" 'off' \
-            'canary' "Canary Channel" 'off' \
-            'debug' "Canary Channel Debug Build" 'off'
-    )
-else
-    MAGISK_VER=debug
+if [ GAPPS_VARIANT != "none" ]; then
+    GAPPS_BRAND="OpenGApps"
 fi
 
-if (YesNoBox '([title]="Install GApps" [text]="Do you want to install GApps?")'); then
-    GAPPS_BRAND=$(
-        Radiolist '([title]="Which GApps do you want to install?"
-                 [default]="MindTheGapps")' \
-            \
-            'OpenGApps' "" 'off' \
-            'MindTheGapps' "" 'on'
-    )
-else
-    GAPPS_BRAND="none"
-fi
-if [ $GAPPS_BRAND = "OpenGApps" ]; then
-    # TODO: Keep it pico since other variants of opengapps are unable to boot successfully
-    if [ "$DEBUG" = "1" ]; then
-    GAPPS_VARIANT=$(
-        Radiolist '([title]="Variants of GApps"
-                     [default]="pico")' \
-            \
-            'super' "" 'off' \
-            'stock' "" 'off' \
-            'full' "" 'off' \
-            'mini' "" 'off' \
-            'micro' "" 'off' \
-            'nano' "" 'off' \
-            'pico' "" 'on' \
-            'tvstock' "" 'off' \
-            'tvmini' "" 'off'
-    )
-    else
-        GAPPS_VARIANT=pico
-    fi
-else
-    GAPPS_VARIANT="pico"
-fi
+COMPRESS_OUTPUT="--compress"
+COMPRESS_FORMAT="7z"
 
-if (YesNoBox '([title]="Remove Amazon Appstore" [text]="Do you want to keep Amazon Appstore?")'); then
-    REMOVE_AMAZON=""
-else
-    REMOVE_AMAZON="--remove-amazon"
-fi
-
-ROOT_SOL=$(
-    Radiolist '([title]="Root solution"
-                     [default]="magisk")' \
-        \
-        'magisk' "" 'on' \
-        'none' "" 'off'
-)
-
-if (YesNoBox '([title]="Compress output" [text]="Do you want to compress the output?")'); then
-    COMPRESS_OUTPUT="--compress"
-else
-    COMPRESS_OUTPUT=""
-fi
-if [ "$COMPRESS_OUTPUT" = "--compress" ]; then
-    COMPRESS_FORMAT=$(
-        Radiolist '([title]="Compress format"
-                        [default]="7z")' \
-            \
-            'zip' "Zip" 'off' \
-            '7z' "7-Zip" 'on' \
-            'xz' "tar.xz" 'off'
-        )
-fi
-# if ! (YesNoBox '([title]="Off line mode" [text]="Do you want to enable off line mode?")'); then
-#     OFFLINE="--offline"
-# else
-#     OFFLINE=""
-# fi
-# OFFLINE="--offline"
-clear
 declare -A RELEASE_TYPE_MAP=(["retail"]="retail" ["release preview"]="RP" ["insider slow"]="WIS" ["insider fast"]="WIF")
-COMMAND_LINE=(--arch "$ARCH" --release-type "${RELEASE_TYPE_MAP[$RELEASE_TYPE]}" --magisk-ver "$MAGISK_VER" --gapps-brand "$GAPPS_BRAND" --gapps-variant "$GAPPS_VARIANT" "$REMOVE_AMAZON" --root-sol "$ROOT_SOL" "$COMPRESS_OUTPUT" "$OFFLINE" "$DEBUG" "$CUSTOM_MAGISK" --compress-format "$COMPRESS_FORMAT")
+COMMAND_LINE=(--arch "$ARCH" --release-type "${RELEASE_TYPE_MAP[$RELEASE_TYPE]}" --magisk-ver "$MAGISK_VER" --gapps-brand "$GAPPS_BRAND" --gapps-variant "$GAPPS_VARIANT" "$REMOVE_AMAZON" --root-sol "$ROOT_SOL" "$COMPRESS_OUTPUT" "$OFFLINE" "$DEBUG" "$CUSTOM_MAGISK" --debug --compress-format "$COMPRESS_FORMAT")
 echo "COMMAND_LINE=${COMMAND_LINE[*]}"
 ./build.sh "${COMMAND_LINE[@]}"
